@@ -95,7 +95,8 @@ Sybase.prototype.query = function(sql, callback)
 
 Sybase.prototype.onSQLResponse = function(buffer)
 {
-    var jsonMsg = JSON.parse(iconv.decode(buffer, 'iso88599'));
+    var decoded = iconv.decode(buffer, 'iso88599');
+    var jsonMsg = JSON.parse(decoded);
 	
     var err = null;
     var request = this.currentMessages[jsonMsg.msgId];

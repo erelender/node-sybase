@@ -14,7 +14,7 @@ install
 ### git
 
 ```bash
-git clone git://github.com/rodhoward/node-sybase.git
+git clone git://github.com/erelender/node-sybase.git
 cd node-sybase
 node-gyp configure build
 ```
@@ -60,3 +60,8 @@ The java Bridge now optionally looks for a "sybaseConfig.properties" file in whi
 ```properties
 ENCRYPT_PASSWORD=true
 ```
+
+REMARKS
+-------------
+
+This fork has been modified to accept ISO-8859-9 encoding from the JAR file for use with operating systems with default Turkish encoding.

@@ -2,6 +2,7 @@ var spawn = require('child_process').spawn;
 var fs = require("fs");
 var path = require("path");
 var iconv = require("iconv-lite");
+var JSONStream = require("JSONStream");
 
 function Sybase(host, port, dbname, username, password, enableLogs, pathToJavaBridge)
 {
@@ -21,6 +22,8 @@ function Sybase(host, port, dbname, username, password, enableLogs, pathToJavaBr
 
     this.queryCount = 0;
     this.currentMessages = {}; // look up msgId to message sent and call back details.
+
+    this.jsonParser = JSONStream.parse();
 }
 
 Sybase.prototype.connect = function(callback)
@@ -40,7 +43,7 @@ Sybase.prototype.connect = function(callback)
 		that.connected = true;
 
 		// set up normal listeners.		
-		that.javaDB.stdout.on("data", function(buf) { that.onSQLResponse.call(that, buf); });
+		that.javaDB.stdout.pipe(iconv.decodeStream('iso88599')).pipe(that.jsonParser).on("data", function(buf) { that.onSQLResponse.call(that, buf); });
 		that.javaDB.stderr.on("data", function(err) { that.onSQLError.call(that, err); });
 
 		callback(null, data);
@@ -93,22 +96,8 @@ Sybase.prototype.query = function(sql, callback)
         console.log("SQL request written: " + strMsg);
 };
 
-Sybase.prototype.onSQLResponse = function(buffer)
+Sybase.prototype.onSQLResponse = function(jsonMsg)
 {
-    var decoded = iconv.decode(buffer, 'iso88599');
-    var jsonMsg;
-    try(){
-        jsonMsg = JSON.parse(decoded);
-    }
-    catch(err){
-        if(this.enableLogs)
-	{
-            console.log("Could not parse json input: " + err);
-            console.log("Discarding message, it's most likely just an errant newline");
-	}
-        return;
-    }
-	
     var err = null;
     var request = this.currentMessages[jsonMsg.msgId];
     delete this.currentMessages[jsonMsg.msgId];
